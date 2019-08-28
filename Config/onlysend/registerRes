@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Robot> 
+    <SendCode>Server01</SendCode>  
+    <ReceiveCode>Client01</ReceiveCode> 
+<Type>251</Type>  
+    <Code>200</Code>
+    <Command>4</Command>  
+<Time>2019-01-01 12:02:35</Time>
+    <Items> 
+        <Item heart_beat_interval=60/>  
+    </Items> 
+</Robot>

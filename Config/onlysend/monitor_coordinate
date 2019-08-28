@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Robot> 
+    <SendCode>Client01</SendCode>  
+    <ReceiveCode>Server01</ReceiveCode> 
+<Type>3</Type>  
+    <Code/>
+    <Command/>  
+<Time>2019-01-01 12:02:34</Time>
+    <Items>
+        <Item robot_name=500kV机器人 robot_code=Robot01 file_path=Station01/Map/Robot01_1.jpg time=2019-01-01 12:02:12 value=345.5,34.1/>
+    </Items>
+</Robot>

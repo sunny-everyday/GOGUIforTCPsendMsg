@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"io/ioutil"
 	"strings"
+	"strconv"
 )
 
 type Condom struct {
@@ -40,6 +41,9 @@ func (m *CondomModel) Value(row, col int) interface{} {
 		return item.Name
 	case 2:
 		return item.Type
+	case 3:
+		return item.MessageInfo
+
 	}
 	panic("unexpected col")
 }
@@ -73,6 +77,20 @@ func (m *CondomModel) Len() int {
 func (m *CondomModel) Swap(i, j int) {
 	m.items[i], m.items[j] = m.items[j], m.items[i]
 }
+func (m *CondomModel)FloatToString(input_num float64) string {
+	// to convert a float number to a string
+	return strconv.FormatFloat(float64(input_num), 'f', 6, 64)
+}
+//message number
+var osmessagenumber int  = 0
+var rsmessagenumber int  = 0
+
+var onlysendmessagelist [100]string
+var readsendmessagelist [100]string
+
+var onlysendmessage [100]string
+var readsendmessage [100]string
+
 
 func NewCondomModel() *CondomModel {
 	m := new(CondomModel)
@@ -135,6 +153,33 @@ type CondomMainWindow struct {
 	tv    *walk.TableView
 }
 
+func (m *CondomMainWindow) ResetRows() {
+	items := []*Condom{}
+	
+
+	for i := 0; i<osmessagenumber -1; i++ {
+		x:= &Condom{
+			Index: i+1,
+			Name:   onlysendmessagelist[i],
+			Type:   "send",
+			MessageInfo:  onlysendmessage[i],
+		}
+		items = append(items, x)
+	}
+
+	for j := osmessagenumber; j < osmessagenumber +rsmessagenumber; j++ {
+		x:= &Condom{
+			Index: j,
+			Name:   readsendmessagelist[j-osmessagenumber],
+			Type:   "receive",
+			MessageInfo:  readsendmessage[j-osmessagenumber],
+		}
+		items = append(items, x)
+	}
+	m.model.items = items
+	m.model.PublishRowsReset()
+	m.tv.SetSelectedIndexes([]int{})
+}
 func main() {
 	mw := &CondomMainWindow{model: NewCondomModel()}
 	var IP, Port *walk.TextEdit
@@ -142,7 +187,7 @@ func main() {
 	MainWindow{
 		AssignTo: &mw.MainWindow,
 		Title:    "Robot Simulator",
-		Size:     Size{500, 300},
+		Size:     Size{800, 500},
 		Layout:   VBox{},
 		Children: []Widget{
 			Composite{
@@ -160,8 +205,12 @@ func main() {
 							TextEdit{AssignTo: &Port},
 						},
 					},
+					//PushButton{
+					//	Text:      "Reset Rows",
+					//	OnClicked: mw.ResetRows,
+					//},
 					PushButton{
-						Text: "Redraw",
+						Text: "Reload",
 						OnClicked: func() {
 							fpt, err := filepath.Abs("___go_build_minfang827.exe")
 							if err != nil {
@@ -170,19 +219,36 @@ func main() {
 							fmt.Println(fpt)
 							way1 := strings.Replace(fpt, "___go_build_minfang827.exe", `minfang827\Config\onlysend\`, 1)
 							way2 := strings.Replace(fpt, "___go_build_minfang827.exe", `minfang827\Config\readsend\`, 1)
+							
 
+							//onlysend
 							files, _ := ioutil.ReadDir(way1)
 							fmt.Println(way1)
+							osmessagenumber = 0
 							for _, f := range files {
 								fmt.Println(f.Name())
+								onlysendmessagelist[osmessagenumber] = f.Name()
+								data, _ := ioutil.ReadFile(way1+f.Name())
+								fmt.Println(data)
+								onlysendmessage[osmessagenumber]  = string(data)
+								osmessagenumber ++ 
 							}
+							//readsend
 							files, _ = ioutil.ReadDir(way2)
 							fmt.Println(way2)
+							rsmessagenumber = 0
 							for _, f := range files {
 								fmt.Println(f.Name())
+								readsendmessagelist[rsmessagenumber] = f.Name()
+								data, _ := ioutil.ReadFile(way2+f.Name())
+								fmt.Println(data)
+								readsendmessage[rsmessagenumber] = string(data)
+								rsmessagenumber ++
 							}
-
+							fmt.Println(rsmessagenumber +osmessagenumber)
+							mw.ResetRows()
 						},
+
 					},
 					PushButton{
 						Text: "Connect",
@@ -242,13 +308,18 @@ func main() {
 							{Title: "编号"},
 							{Title: "消息名称"},
 							{Title: "消息类型"},
+							{Title: "消息内容"},
 						},
 						Model: mw.model,
 						OnCurrentIndexChanged: func() {
 							i := mw.tv.CurrentIndex()
 							if 0 <= i {
 								fmt.Printf("OnCurrentIndexChanged: %v\n", mw.model.items[i].Name)
+
 							}
+						},
+						OnSelectedIndexesChanged: func() {
+							fmt.Printf("SelectedIndexes: %v\n", mw.tv.SelectedIndexes())
 						},
 						OnItemActivated: mw.tv_ItemActivated,
 					},

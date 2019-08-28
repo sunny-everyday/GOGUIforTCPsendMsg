@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Robot> 
+    <SendCode>Client01</SendCode>  
+    <ReceiveCode>Server01</ReceiveCode> 
+<Type>251</Type>  
+    <Code>200</Code>
+    <Command>4</Command>  
+<Time>2019-01-01 12:02:44</Time>
+<Items> 
+<Item robot_name=500kV机器人 robot_code=Robot01 time=2019-01-01 12:02:39 content=机器人驱动异常/>  
+<Item robot_name=500kV机器人 robot_code=Robot01 time=2019-01-01 12:02:41 content=机器人超声告警/>    
+</Items> 
+</Robot>

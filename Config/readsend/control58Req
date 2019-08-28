@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Robot> 
+    <SendCode>Server01</SendCode>  
+    <ReceiveCode>Client01</ReceiveCode> 
+<Type>1</Type>  
+    <Code>Robot01</Code>
+    <Command>5</Command>  
+<Time>2019-01-01 12:02:34</Time>
+    <Items value=1/> 
+</Robot>
