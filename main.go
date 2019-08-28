@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"strings"
 	"strconv"
+	"encoding/xml"
 )
 
 type Condom struct {
@@ -261,6 +262,7 @@ func main() {
 								return
 							}
 							lnkclient = conn
+							go mw.TcpClientReadandSend(lnkclient)
 						},
 					},
 					PushButton{
@@ -279,7 +281,7 @@ func main() {
 								}
 							}
 							fmt.Println()
-							lnkclient.Close()
+							
 						},
 					},
 				},
@@ -294,6 +296,7 @@ func main() {
 					Action{
 						Text: "E&xit",
 						OnTriggered: func() {
+						    lnkclient.Close()
 							mw.Close()
 						},
 					},
@@ -336,4 +339,75 @@ func (mw *CondomMainWindow) tv_ItemActivated() {
 		msg = msg + "\n" + mw.model.items[i].Name + ":" + mw.model.items[i].MessageInfo
 	}
 	walk.MsgBox(mw, "title", msg, walk.MsgBoxIconInformation)
+}
+
+func (mw *CondomMainWindow) TcpClientReadandSend(lnkclient net.Conn){
+	for {
+		var buf [2000]byte
+		n, err := lnkclient.Read(buf[:])
+
+		if err != nil {
+			fmt.Printf("read from connect failed, err: %v\n", err)
+			break
+		}
+		str := string(buf[:n])
+		fmt.Printf("receive from client, data: %v\n", str)
+		sendmessageName := mw.GetXMLanswer(str)
+		if("" != sendmessageName){
+			for _, x := range mw.model.items {
+				if x.Name == sendmessageName {
+					var err error
+					_,err = lnkclient.Write([]byte(x.MessageInfo))
+					if err != nil {
+						fmt.Printf("write failed , err : %v\n", err)
+						break
+					}
+				}
+			}
+		}	
+	}
+}
+func (mw *CondomMainWindow) GetXMLanswer(receiveXML string)string {
+	var t xml.Token
+    var err error
+    inputReader := strings.NewReader(receiveXML)
+
+    // 从文件读取，如可以如下：
+    // content, err := ioutil.ReadFile("studygolang.xml")
+    // decoder := xml.NewDecoder(bytes.NewBuffer(content))
+
+    decoder := xml.NewDecoder(inputReader)
+    var TYPEflag bool
+    for t,err = decoder.Token(); err == nil; t,err = decoder.Token() {
+        switch token := t.(type) {
+        // 处理元素开始（标签）
+        case xml.StartElement:
+            name := token.Name.Local
+            fmt.Printf("Token name: %s\n", name)
+            if("Type" == name) {
+				TYPEflag = true
+			}
+            for _, attr := range token.Attr {
+                attrName := attr.Name.Local
+                attrValue := attr.Value
+                fmt.Printf("An attribute is: %s %s\n", attrName, attrValue)
+            }
+        // 处理元素结束（标签）
+        case xml.EndElement:
+            fmt.Printf("Token of '%s' end\n", token.Name.Local)
+        // 处理字符数据（这里就是元素的文本）
+        case xml.CharData:
+            if(TYPEflag){
+				content := string([]byte(token))
+				fmt.Printf("This is the content: %v\n", content)
+				if("1" == content){
+					return "control58Res"
+				}
+			}
+			TYPEflag=false
+        default:
+            // ...
+        }
+    }
+	return ""
 }
