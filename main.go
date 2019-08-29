@@ -95,56 +95,8 @@ var readsendmessage [100]string
 
 func NewCondomModel() *CondomModel {
 	m := new(CondomModel)
-	m.items = make([]*Condom, 5)
+	m.items = make([]*Condom, 0)
 
-	m.items[0] = &Condom{
-		Index: 1,
-		Name:  "消息1",
-		Type: "2接口",
-		MessageInfo:"aaa",
-		
-	}
-
-	m.items[1] = &Condom{
-		Index: 2,
-		Name:  "消息2",
-		Type: "1接口",
-		MessageInfo:"bbb",
-	}
-
-	m.items[2] = &Condom{
-		Index: 3,
-		Name:  "消息3",
-		Type: "1接口",
-		MessageInfo:"ccc",
-	}
-	m.items[3] = &Condom{
-		Index: 3,
-		Name:  "消息3",
-		Type: "2接口",
-		MessageInfo:"ddd",
-	}
-
-	m.items[4] = &Condom{
-		Index: 3,
-		Name:  "消息3",
-		Type: "2接口",
-		MessageInfo:`MESSAGE sip: 前端设备地址编码@前端设备所属系统域名或IP地址 SIP/2.0
-		From: <sip: 用户地址编码@用户所属系统域名或IP地址> ;tag=BK32B1U8DKDrB
-		To: <sip: 前端设备地址编码@前端设备所属系统域名或IP地址>
-		Contact: <sip: 用户地址编码@用户所属系统域名或IP地址>
-		Via: SIP/2.0/UDP 用户所属系统IP地址;branch=z9hG4bK
-		Call-ID: c47k42
-		CSeq:1 MESSAGE
-		Content-type: application/xml
-		Content-Length: 消息体的长度
-		
-		<?xml version="1.0" encoding="UTF-8"?>
-		<SIP_XML EventType=" Alg_Ability_Query">
-		<!-- 对象地址编码最小对象为前端系统 -->
-		<Item Code="对象地址编码"/>
-		</SIP_XML>`,
-	}
 	return m
 }
 
@@ -158,7 +110,7 @@ func (m *CondomMainWindow) ResetRows() {
 	items := []*Condom{}
 	
 
-	for i := 0; i<osmessagenumber -1; i++ {
+	for i := 0; i<osmessagenumber ; i++ {
 		x:= &Condom{
 			Index: i+1,
 			Name:   onlysendmessagelist[i],
@@ -170,7 +122,7 @@ func (m *CondomMainWindow) ResetRows() {
 
 	for j := osmessagenumber; j < osmessagenumber +rsmessagenumber; j++ {
 		x:= &Condom{
-			Index: j,
+			Index: j+1,
 			Name:   readsendmessagelist[j-osmessagenumber],
 			Type:   "receive",
 			MessageInfo:  readsendmessage[j-osmessagenumber],
@@ -185,42 +137,30 @@ func main() {
 	mw := &CondomMainWindow{model: NewCondomModel()}
 	var IP, Port *walk.TextEdit
 	var lnkclient net.Conn
+	var lnkclientconnectFlag bool = false
+	tcpdisconnect :=make(chan bool)
+	
 	MainWindow{
 		AssignTo: &mw.MainWindow,
 		Title:    "Robot Simulator",
 		Size:     Size{800, 500},
 		Layout:   VBox{},
+
 		Children: []Widget{
 			Composite{
 				Layout: HBox{MarginsZero: true},
 				Children: []Widget{
-					HSplitter{
-						Children: []Widget{
-							Label{
-								Text: "IP",
-							},
-							TextEdit{AssignTo: &IP},
-							Label{
-								Text: "PORT",
-							},
-							TextEdit{AssignTo: &Port},
-						},
-					},
-					//PushButton{
-					//	Text:      "Reset Rows",
-					//	OnClicked: mw.ResetRows,
-					//},
 					PushButton{
 						Text: "Reload",
 						OnClicked: func() {
-							fpt, err := filepath.Abs("___go_build_minfang827.exe")
+							fpt, err := filepath.Abs("go_build_minfang827.exe")
 							if err != nil {
 								panic(err)
 							}
 							fmt.Println(fpt)
-							way1 := strings.Replace(fpt, "___go_build_minfang827.exe", `minfang827\Config\onlysend\`, 1)
-							way2 := strings.Replace(fpt, "___go_build_minfang827.exe", `minfang827\Config\readsend\`, 1)
-							
+							way1 := strings.Replace(fpt, "go_build_minfang827.exe", `Config\onlysend\`, 1)
+							way2 := strings.Replace(fpt, "go_build_minfang827.exe", `Config\readsend\`, 1)
+
 
 							//onlysend
 							files, _ := ioutil.ReadDir(way1)
@@ -232,7 +172,7 @@ func main() {
 								data, _ := ioutil.ReadFile(way1+f.Name())
 								fmt.Println(data)
 								onlysendmessage[osmessagenumber]  = string(data)
-								osmessagenumber ++ 
+								osmessagenumber ++
 							}
 							//readsend
 							files, _ = ioutil.ReadDir(way2)
@@ -262,7 +202,8 @@ func main() {
 								return
 							}
 							lnkclient = conn
-							go mw.TcpClientReadandSend(lnkclient)
+							lnkclientconnectFlag = true
+							go mw.TcpClientReadandSend(tcpdisconnect,lnkclient,&lnkclientconnectFlag)
 						},
 					},
 					PushButton{
@@ -273,7 +214,7 @@ func main() {
 									fmt.Printf("checked: %v\n", x)
 									var err error
 									_,err = lnkclient.Write([]byte(x.MessageInfo))
-									
+
 									if err != nil {
 										fmt.Printf("write failed , err : %v\n", err)
 										break
@@ -281,9 +222,36 @@ func main() {
 								}
 							}
 							fmt.Println()
+
+						},
+					},
+					PushButton{
+						Text: "disconnect",
+						OnClicked: func() {
+							if(lnkclientconnectFlag){
+								go disconnect(tcpdisconnect,lnkclient)
+							}
 							
 						},
 					},
+				},
+			},
+			Composite{
+				Layout: HBox{MarginsZero: true},
+				Children: []Widget{
+					HSplitter{
+						Children: []Widget{
+							Label{
+								Text: "IP",
+							},
+							TextEdit{AssignTo: &IP},
+							Label{
+								Text: "PORT",
+							},
+							TextEdit{AssignTo: &Port},
+						},
+					},
+
 				},
 			},
 			Composite{
@@ -332,6 +300,11 @@ func main() {
 		},
 	}.Run()
 }
+func disconnect(ch chan bool,lnkclient net.Conn){
+	//lnkclient.Close()
+	//lnkclientconnectFlag = false
+	ch <- true
+}
 
 func (mw *CondomMainWindow) tv_ItemActivated() {
 	msg := ``
@@ -341,8 +314,15 @@ func (mw *CondomMainWindow) tv_ItemActivated() {
 	walk.MsgBox(mw, "title", msg, walk.MsgBoxIconInformation)
 }
 
-func (mw *CondomMainWindow) TcpClientReadandSend(lnkclient net.Conn){
+func (mw *CondomMainWindow) TcpClientReadandSend(ch chan bool,lnkclient net.Conn,lnkclientconnectFlag *bool){
+	var disconnectflag bool
 	for {
+		disconnectflag = <-ch
+		if(disconnectflag){
+			lnkclient.Close()
+			*lnkclientconnectFlag = false
+			return 
+		}
 		var buf [2000]byte
 		n, err := lnkclient.Read(buf[:])
 
