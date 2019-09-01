@@ -1,0 +1,8 @@
+github.com/lxn/walk v0.0.0-20190829150329-026611184a72 h1:cFf1M9GnUBjGbZ8smvE4olreLfeLVZy5EtLzaj71XAo=
+github.com/lxn/walk v0.0.0-20190829150329-026611184a72/go.mod h1:E23UucZGqpuUANJooIbHWCufXvOcT6E7Stq81gU+CSQ=
+github.com/lxn/win v0.0.0-20190716185335-d1d36f0e4f48 h1:J2doxiYgOxforcFE2tj6KyLIDF+fBUODRUVNf0EVdnI=
+github.com/lxn/win v0.0.0-20190716185335-d1d36f0e4f48/go.mod h1:oO6+4g3P1GcPAG7LPffwn8Ye0cxW0goh0sUZ6+lRFPs=
+golang.org/x/sys v0.0.0-20190830142957-1e83adbbebd0 h1:7z820YPX9pxWR59qM7BE5+fglp4D/mKqAwCvGt11b+8=
+golang.org/x/sys v0.0.0-20190830142957-1e83adbbebd0/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
+gopkg.in/Knetic/govaluate.v3 v3.0.0 h1:18mUyIt4ZlRlFZAAfVetz4/rzlJs9yhN+U02F4u1AOc=
+gopkg.in/Knetic/govaluate.v3 v3.0.0/go.mod h1:csKLBORsPbafmSCGTEh3U7Ozmsuq8ZSIlKk1bcqph0E=
