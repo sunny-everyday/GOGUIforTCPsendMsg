@@ -34,7 +34,7 @@ type MultiPageMainWindowConfig struct {
 
 type PageConfig struct {
 	Title   string
-	Image   string
+	//Image   string
 	NewPage PageFactoryFunc
 }
 
@@ -119,7 +119,7 @@ func NewMultiPageMainWindow(cfg *MultiPageMainWindowConfig) (*MultiPageMainWindo
 	}()
 
 	for _, pc := range cfg.PageCfgs {
-		action, err := mpmw.newPageAction(pc.Title, pc.Image, pc.NewPage)
+		action, err := mpmw.newPageAction(pc.Title, pc.NewPage)
 		if err != nil {
 			return nil, err
 		}
@@ -162,17 +162,16 @@ func (mpmw *MultiPageMainWindow) CurrentPageChanged() *walk.Event {
 	return mpmw.currentPageChangedPublisher.Event()
 }
 
-func (mpmw *MultiPageMainWindow) newPageAction(title, image string, newPage PageFactoryFunc) (*walk.Action, error) {
-	img, err := walk.Resources.Bitmap(image)
-	if err != nil {
-		return nil, err
-	}
+func (mpmw *MultiPageMainWindow) newPageAction(title string,  newPage PageFactoryFunc) (*walk.Action, error) {
+
 
 	action := walk.NewAction()
-	action.SetCheckable(true)
-	action.SetExclusive(true)
-	action.SetImage(img)
-	action.SetText(title)
+	action.SetCheckable(false)
+	action.SetExclusive(false)
+
+	title = title
+	//action.SetImage(img)
+	//action.SetText(title)
 
 	mpmw.action2NewPage[action] = newPage
 

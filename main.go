@@ -1,5 +1,5 @@
 // Copyright 2017 The Walk Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
+// Use of this source code is governed by  a BSD-style
 // license that can be found in the LICENSE file.
 
 package main
@@ -45,8 +45,8 @@ func main() {
 			mw.updateTitle(mw.CurrentPageTitle())
 		},
 		PageCfgs: []PageConfig{
-			{"机器人", "1.png", newRobotPage},
-			{"104", "2.png", new104Page},
+			{"机器人",  newRobotPage},
+			//{"104", "2.png", new104Page},
 		},
 	}
 
@@ -179,6 +179,7 @@ type CondomMainWindow struct {
 	*walk.MainWindow
 	model *CondomModel
 	tv    *walk.TableView
+	messageforsocket *walk.TextEdit
 }
 
 func (m *CondomMainWindow) ResetRows() {
@@ -211,7 +212,7 @@ func (m *CondomMainWindow) ResetRows() {
 func newRobotPage(parent walk.Container) (Page, error) {
 	p := new(RobotPage)
 	mw := &CondomMainWindow{model: NewCondomModel()}
-	var IP, Port,connectstatus,messageforsocket,messageinfo *walk.TextEdit
+	var IP, Port,connectstatus,messageinfo *walk.TextEdit
 	var lnkclient net.Conn
 	var lnkclientconnectFlag bool = false
 	tcpdisconnect :=make(chan bool)
@@ -283,6 +284,8 @@ func newRobotPage(parent walk.Container) (Page, error) {
 					PushButton{
 						Text: "Send",
 						OnClicked: func() {
+							buf := bytes.NewBufferString("发送消息:")
+							fmt.Println(buf.String())
 							for _, x := range mw.model.items {
 								if x.checked {
 									fmt.Printf("checked: %v\n", x)
@@ -293,8 +296,11 @@ func newRobotPage(parent walk.Container) (Page, error) {
 										fmt.Printf("write failed , err : %v\n", err)
 										break
 									}
+									//将newString这个string写到buf的尾部
+									buf.WriteString(x.MessageInfo)
 								}
 							}
+							mw.messageforsocket.SetText(buf.String()+ "\r\n")
 							fmt.Println()
 
 						},
@@ -340,7 +346,13 @@ func newRobotPage(parent walk.Container) (Page, error) {
 							Label{
 								Text: "message for socket",
 							},
-							TextEdit{AssignTo: &messageforsocket},
+							TextEdit{
+								AssignTo: &mw.messageforsocket,
+								ReadOnly: false,
+								HScroll: true,
+								VScroll: true,
+								Text:     "waiting for send or receive",
+							},
 						},
 					},
 				},
@@ -374,6 +386,7 @@ func newRobotPage(parent walk.Container) (Page, error) {
 							i := mw.tv.CurrentIndex()
 							if 0 <= i {
 								fmt.Printf("OnCurrentIndexChanged: %v\n", mw.model.items[i].Name)
+								messageinfo.SetText(mw.model.items[i].MessageInfo)
 
 							}
 						},
@@ -381,7 +394,14 @@ func newRobotPage(parent walk.Container) (Page, error) {
 							fmt.Printf("SelectedIndexes: %v\n", mw.tv.SelectedIndexes())
 						},
 					},
-					TextEdit{AssignTo: &messageinfo},
+					//TextEdit{AssignTo: &messageinfo},
+					TextEdit{
+						AssignTo: &messageinfo,
+						ReadOnly: false,
+						HScroll: true,
+						VScroll: true,
+						Text:     "",
+					},
 				},
 			},
 		},
@@ -447,6 +467,7 @@ func (mw *CondomMainWindow) TcpClientReadandSend(ch chan bool, lnkclient net.Con
 		}
 		str := string(buf[:n])
 		fmt.Printf("receive from client, data: %v\n", str)
+		mw.messageforsocket.SetText("接收消息:"+ "\r\n" + str + "\r\n")
 		sendmessageName := mw.GetXMLanswer(str)
 		if ("" != sendmessageName) {
 			for _, x := range mw.model.items {
