@@ -22,73 +22,6 @@ import (
 	"strings"
 )
 
-func main() {
-	walk.Resources.SetRootDirPath("../img")
-
-	mw := new(AppMainWindow)
-
-	cfg := &MultiPageMainWindowConfig{
-		Name:    "mainWindow",
-		MinSize: Size{600, 400},
-		MenuItems: []MenuItem{
-			Menu{
-				Text: "&Help",
-				Items: []MenuItem{
-					Action{
-						Text:        "About",
-						OnTriggered: func() { mw.aboutAction_Triggered() },
-					},
-				},
-			},
-		},
-		OnCurrentPageChanged: func() {
-			mw.updateTitle(mw.CurrentPageTitle())
-		},
-		PageCfgs: []PageConfig{
-			{"机器人",  newRobotPage},
-			//{"104", "2.png", new104Page},
-		},
-	}
-
-	mpmw, err := NewMultiPageMainWindow(cfg)
-	if err != nil {
-		panic(err)
-	}
-
-	mw.MultiPageMainWindow = mpmw
-
-	mw.updateTitle(mw.CurrentPageTitle())
-
-	mw.Run()
-}
-
-type AppMainWindow struct {
-	*MultiPageMainWindow
-}
-
-func (mw *AppMainWindow) updateTitle(prefix string) {
-	var buf bytes.Buffer
-
-	if prefix != "" {
-		buf.WriteString(prefix)
-		buf.WriteString("界面")
-	}
-
-	buf.WriteString("")
-
-	mw.SetTitle(buf.String())
-}
-
-func (mw *AppMainWindow) aboutAction_Triggered() {
-	walk.MsgBox(mw,
-		"about",
-		"about",
-		walk.MsgBoxOK|walk.MsgBoxIconInformation)
-}
-
-type RobotPage struct {
-	*walk.Composite
-}
 type Condom struct {
 	Index       int
 	Name        string
@@ -209,238 +142,216 @@ func (m *CondomMainWindow) ResetRows() {
 	m.model.PublishRowsReset()
 	m.tv.SetSelectedIndexes([]int{})
 }
-func newRobotPage(parent walk.Container) (Page, error) {
-	p := new(RobotPage)
+func main() {
 	mw := &CondomMainWindow{model: NewCondomModel()}
 	var IP, Port,connectstatus,messageinfo *walk.TextEdit
 	var lnkclient net.Conn
 	var lnkclientconnectFlag bool = false
-	tcpdisconnect :=make(chan bool)
-	if err := (Composite{
-		AssignTo: &p.Composite,
-		Name:     "fooPage",
+	tcpdisconnect := make(chan bool)
+
+	MainWindow{
+		AssignTo: &mw.MainWindow,
+		Title:    "Robot Simulator",
+		Size:     Size{800, 500},
 		Layout:   VBox{},
 		Children: []Widget{
-			Composite{
-				Layout: HBox{MarginsZero: true},
-				Children: []Widget{
-					PushButton{
-						Text: "Reload",
-						OnClicked: func() {
-							fpt, err := filepath.Abs("go_build_minfang827.exe")
-							if err != nil {
-								panic(err)
-							}
-							fmt.Println(fpt)
-							way1 := strings.Replace(fpt, "go_build_minfang827.exe", `Config\onlysend\`, 1)
-							way2 := strings.Replace(fpt, "go_build_minfang827.exe", `Config\readsend\`, 1)
-
-
-							//onlysend
-							files, _ := ioutil.ReadDir(way1)
-							fmt.Println(way1)
-							osmessagenumber = 0
-							for _, f := range files {
-								fmt.Println(f.Name())
-								onlysendmessagelist[osmessagenumber] = f.Name()
-								data, _ := ioutil.ReadFile(way1+f.Name())
-								fmt.Println(data)
-								onlysendmessage[osmessagenumber]  = string(data)
-								osmessagenumber ++
-							}
-							//readsend
-							files, _ = ioutil.ReadDir(way2)
-							fmt.Println(way2)
-							rsmessagenumber = 0
-							for _, f := range files {
-								fmt.Println(f.Name())
-								readsendmessagelist[rsmessagenumber] = f.Name()
-								data, _ := ioutil.ReadFile(way2+f.Name())
-								fmt.Println(data)
-								readsendmessage[rsmessagenumber] = string(data)
-								rsmessagenumber ++
-							}
-							fmt.Println(rsmessagenumber +osmessagenumber)
-							mw.ResetRows()
-						},
-
-					},
-					PushButton{
-						Text: "Connect",
-						OnClicked: func() {
-							serveraddr := IP.Text() + ":" + Port.Text()
-							conn, err := net.Dial("tcp", serveraddr)
-
-							if err != nil {
-								fmt.Printf("connect failed, err : %v\n", err.Error())
-								return
-							}
-							lnkclient = conn
-							lnkclientconnectFlag = true
-							connectstatus.SetText("connect for "+serveraddr)
-							go mw.TcpClientReadandSend(tcpdisconnect,lnkclient,&lnkclientconnectFlag)
-						},
-					},
-					PushButton{
-						Text: "Send",
-						OnClicked: func() {
-							buf := bytes.NewBufferString("发送消息:")
-							fmt.Println(buf.String())
-							for _, x := range mw.model.items {
-								if x.checked {
-									fmt.Printf("checked: %v\n", x)
-									var err error
-									_,err = lnkclient.Write([]byte(x.MessageInfo))
-
-									if err != nil {
-										fmt.Printf("write failed , err : %v\n", err)
-										break
-									}
-									//将newString这个string写到buf的尾部
-									buf.WriteString(x.MessageInfo)
-								}
-							}
-							mw.messageforsocket.SetText(buf.String()+ "\r\n")
-							fmt.Println()
-
-						},
-					},
-					PushButton{
-						Text: "disconnect",
-						OnClicked: func() {
-							if(lnkclientconnectFlag){
-								go disconnect(tcpdisconnect,lnkclient)
-							}
-							connectstatus.SetText("disconnect")
-
-						},
-					},
-				},
-			},
-			Composite{
-				Layout: HBox{MarginsZero: true},
-				Children: []Widget{
-					HSplitter{
+			TabWidget{
+				Pages: []TabPage{
+					{
+						Title:  "Robot",
+						Layout: VBox{},
 						Children: []Widget{
-							Label{
-								Text: "IP",
-							},
-							TextEdit{AssignTo: &IP},
-							Label{
-								Text: "PORT",
-							},
-							TextEdit{AssignTo: &Port},
-							Label{
-								Text: "status for connection",
-							},
-							TextEdit{AssignTo: &connectstatus},
-						},
-					},
-				},
-			},
-			Composite{
-				Layout: HBox{MarginsZero: true},
-				Children: []Widget{
-					HSplitter{
-						Children: []Widget{
-							Label{
-								Text: "message for socket",
-							},
-							TextEdit{
-								AssignTo: &mw.messageforsocket,
-								ReadOnly: false,
-								HScroll: true,
-								VScroll: true,
-								Text:     "waiting for send or receive",
-							},
-						},
-					},
-				},
-			},
-			Composite{
-				Layout: HBox{MarginsZero: true},
-				ContextMenuItems: []MenuItem{
+							GroupBox{
+								Layout: HBox{MarginsZero: true},
+								Children: []Widget{
+									PushButton{
+										Text: "Reload",
+										OnClicked: func() {
+											fpt, err := filepath.Abs("go_build_minfang827.exe")
+											if err != nil {
+												panic(err)
+											}
+											fmt.Println(fpt)
+											way1 := strings.Replace(fpt, "go_build_minfang827.exe", `Config\onlysend\`, 1)
+											way2 := strings.Replace(fpt, "go_build_minfang827.exe", `Config\readsend\`, 1)
 
-					Action{
-						Text: "E&xit",
-						OnTriggered: func() {
-							lnkclient.Close()
-							mw.Close()
-						},
-					},
-				},
-				Children: []Widget{
-					TableView{
-						AssignTo:         &mw.tv,
-						CheckBoxes:       true,
-						ColumnsOrderable: true,
-						MultiSelection:   true,
-						Columns: []TableViewColumn{
-							{Title: "编号"},
-							{Title: "消息名称"},
-							{Title: "消息类型"},
-							//{Title: "消息内容"},
-						},
-						Model: mw.model,
-						OnCurrentIndexChanged: func() {
-							i := mw.tv.CurrentIndex()
-							if 0 <= i {
-								fmt.Printf("OnCurrentIndexChanged: %v\n", mw.model.items[i].Name)
-								messageinfo.SetText(mw.model.items[i].MessageInfo)
+											//onlysend
+											files, _ := ioutil.ReadDir(way1)
+											fmt.Println(way1)
+											osmessagenumber = 0
+											for _, f := range files {
+												fmt.Println(f.Name())
+												onlysendmessagelist[osmessagenumber] = f.Name()
+												data, _ := ioutil.ReadFile(way1 + f.Name())
+												fmt.Println(data)
+												onlysendmessage[osmessagenumber] = string(data)
+												osmessagenumber ++
+											}
+											//readsend
+											files, _ = ioutil.ReadDir(way2)
+											fmt.Println(way2)
+											rsmessagenumber = 0
+											for _, f := range files {
+												fmt.Println(f.Name())
+												readsendmessagelist[rsmessagenumber] = f.Name()
+												data, _ := ioutil.ReadFile(way2 + f.Name())
+												fmt.Println(data)
+												readsendmessage[rsmessagenumber] = string(data)
+												rsmessagenumber ++
+											}
+											fmt.Println(rsmessagenumber + osmessagenumber)
+											mw.ResetRows()
+										},
+									},
+									PushButton{
+										Text: "Connect",
+										OnClicked: func() {
+											serveraddr := IP.Text() + ":" + Port.Text()
+											conn, err := net.Dial("tcp", serveraddr)
 
-							}
-						},
-						OnSelectedIndexesChanged: func() {
-							fmt.Printf("SelectedIndexes: %v\n", mw.tv.SelectedIndexes())
+											if err != nil {
+												fmt.Printf("connect failed, err : %v\n", err.Error())
+												return
+											}
+											lnkclient = conn
+											lnkclientconnectFlag = true
+											connectstatus.SetText("connect for " + serveraddr)
+											go mw.TcpClientReadandSend(tcpdisconnect, lnkclient, &lnkclientconnectFlag)
+										},
+									},
+									PushButton{
+										Text: "Send",
+										OnClicked: func() {
+											buf := bytes.NewBufferString("发送消息:")
+											fmt.Println(buf.String())
+											for _, x := range mw.model.items {
+												if x.checked {
+													fmt.Printf("checked: %v\n", x)
+													var err error
+													_, err = lnkclient.Write([]byte(x.MessageInfo))
+
+													if err != nil {
+														fmt.Printf("write failed , err : %v\n", err)
+														break
+													}
+													//将newString这个string写到buf的尾部
+													buf.WriteString(x.MessageInfo)
+												}
+											}
+											mw.messageforsocket.SetText(buf.String() + "\r\n")
+											fmt.Println()
+
+										},
+									},
+									PushButton{
+										Text: "disconnect",
+										OnClicked: func() {
+											if (lnkclientconnectFlag) {
+												go disconnect(tcpdisconnect, lnkclient)
+											}
+											connectstatus.SetText("disconnect")
+
+										},
+									},
+								},
+							},
+							Composite{
+								Layout: HBox{MarginsZero: true},
+								Children: []Widget{
+									HSplitter{
+										Children: []Widget{
+											Label{
+												Text: "IP",
+											},
+											TextEdit{AssignTo: &IP},
+											Label{
+												Text: "PORT",
+											},
+											TextEdit{AssignTo: &Port},
+											Label{
+												Text: "status for connection",
+											},
+											TextEdit{AssignTo: &connectstatus},
+										},
+									},
+								},
+							},
+							Composite{
+								Layout: HBox{MarginsZero: true},
+								Children: []Widget{
+									HSplitter{
+										Children: []Widget{
+											Label{
+												Text: "message for socket",
+											},
+											TextEdit{
+												AssignTo: &mw.messageforsocket,
+												ReadOnly: false,
+												HScroll:  true,
+												VScroll:  true,
+												Text:     "waiting for send or receive",
+											},
+										},
+									},
+								},
+							},
+							Composite{
+								Layout: HBox{MarginsZero: true},
+								ContextMenuItems: []MenuItem{
+
+									Action{
+										Text: "E&xit",
+										OnTriggered: func() {
+											lnkclient.Close()
+											mw.Close()
+										},
+									},
+								},
+								Children: []Widget{
+									TableView{
+										AssignTo:         &mw.tv,
+										CheckBoxes:       true,
+										ColumnsOrderable: true,
+										MultiSelection:   true,
+										Columns: []TableViewColumn{
+											{Title: "编号"},
+											{Title: "消息名称"},
+											{Title: "消息类型"},
+											//{Title: "消息内容"},
+										},
+										Model: mw.model,
+										OnCurrentIndexChanged: func() {
+											i := mw.tv.CurrentIndex()
+											if 0 <= i {
+												fmt.Printf("OnCurrentIndexChanged: %v\n", mw.model.items[i].Name)
+												messageinfo.SetText(mw.model.items[i].MessageInfo)
+
+											}
+										},
+										OnSelectedIndexesChanged: func() {
+											fmt.Printf("SelectedIndexes: %v\n", mw.tv.SelectedIndexes())
+										},
+									},
+									//TextEdit{AssignTo: &messageinfo},
+									TextEdit{
+										AssignTo: &messageinfo,
+										ReadOnly: false,
+										HScroll:  true,
+										VScroll:  true,
+										Text:     "",
+									},
+								},
+							},
 						},
 					},
-					//TextEdit{AssignTo: &messageinfo},
-					TextEdit{
-						AssignTo: &messageinfo,
-						ReadOnly: false,
-						HScroll: true,
-						VScroll: true,
-						Text:     "",
+					{
+						Title:  "104",
+						Layout: VBox{},
 					},
 				},
 			},
 		},
-	}).Create(NewBuilder(parent)); err != nil {
-		return nil, err
-	}
-
-	if err := walk.InitWrapperWindow(p); err != nil {
-		return nil, err
-	}
-
-	return p, nil
-}
-
-type n104Page struct {
-	*walk.Composite
-}
-
-func new104Page(parent walk.Container) (Page, error) {
-	p := new(n104Page)
-
-	if err := (Composite{
-		AssignTo: &p.Composite,
-		Name:     "barPage",
-		Layout:   HBox{},
-		Children: []Widget{
-			HSpacer{},
-			Label{Text: "I'm the Bar page"},
-			HSpacer{},
-		},
-	}).Create(NewBuilder(parent)); err != nil {
-		return nil, err
-	}
-
-	if err := walk.InitWrapperWindow(p); err != nil {
-		return nil, err
-	}
-
-	return p, nil
+	}.Run()
 }
 func disconnect(ch chan bool, lnkclient net.Conn) {
 	//lnkclient.Close()
@@ -448,6 +359,13 @@ func disconnect(ch chan bool, lnkclient net.Conn) {
 	ch <- true
 }
 
+func (mw *CondomMainWindow) tv_ItemActivated() {
+	msg := ``
+	for _, i := range mw.tv.SelectedIndexes() {
+		msg = msg + "\n" + mw.model.items[i].Name + ":" + mw.model.items[i].MessageInfo
+	}
+	walk.MsgBox(mw, "title", msg, walk.MsgBoxIconInformation)
+}
 
 func (mw *CondomMainWindow) TcpClientReadandSend(ch chan bool, lnkclient net.Conn, lnkclientconnectFlag *bool) {
 	var disconnectflag bool
