@@ -147,13 +147,20 @@ func main() {
 	var IP, Port,connectstatus,messageinfo *walk.TextEdit
 	var lnkclient net.Conn
 	var lnkclientconnectFlag bool = false
+	var Hexflag  bool = true
 	tcpdisconnect := make(chan bool)
-
+	var db *walk.DataBinder
 	MainWindow{
 		AssignTo: &mw.MainWindow,
 		Title:    "Robot Simulator",
 		Size:     Size{800, 500},
 		Layout:   VBox{},
+		DataBinder: DataBinder{
+			AssignTo:       &db,
+			Name:           "animal",
+			DataSource:     Hexflag,
+			ErrorPresenter: ToolTipErrorPresenter{},
+		},
 		Children: []Widget{
 			TabWidget{
 				Pages: []TabPage{
@@ -228,8 +235,20 @@ func main() {
 												if x.checked {
 													fmt.Printf("checked: %v\n", x)
 													var err error
-													_, err = lnkclient.Write([]byte(x.MessageInfo))
+													//判断十六进制
+													if(Hexflag){
+														result, buffer := stringtoASCII(x.MessageInfo)
+														if(result){
+															var delim byte = 0x23 //在stringtoASCII处理中增加的结束符
+															//fmt.Printf("before read buffer: %v,len: %v \n", buffer.String(),buffer.Len())
+															line, _ := buffer.ReadString(delim)
+															fmt.Printf("after read buffer: %v,len: %v\n", buffer.String(),buffer.Len())
+															_, err = lnkclient.Write([]byte(strings.Trim(line,"#")))
+														}
 
+													}else{
+														_, err = lnkclient.Write([]byte(x.MessageInfo))
+													}
 													if err != nil {
 														fmt.Printf("write failed , err : %v\n", err)
 														break
@@ -342,6 +361,17 @@ func main() {
 									},
 								},
 							},
+							Composite{
+								Layout: Grid{Columns: 2},
+								Children: []Widget{
+									Label{
+										Text: "十六进制",
+									},
+									CheckBox{
+										Checked: Bind("Hexflag"),
+									},
+								},
+							},
 						},
 					},
 					{
@@ -358,7 +388,46 @@ func disconnect(ch chan bool, lnkclient net.Conn) {
 	//lnkclientconnectFlag = false
 	ch <- true
 }
+func stringtoASCII(loadinfo string) (bool, bytes.Buffer)  {
+	var reinfo bytes.Buffer
+	var outinfo []byte = make([]byte, 1)
+	loadinfoByte := strings.Split(loadinfo, " ")
+	if(loadinfoByte[0] == ""){
+		fmt.Printf("文件是空的")
+		reinfo.Write([]byte(""))
+		return false, reinfo
+	}
+		
+	lenforload := len(loadinfoByte)
+	fmt.Printf("byte number is: %v\n", lenforload)
+	for  i:=0; i < lenforload; i +=1{
+		fmt.Printf(loadinfoByte[i])
+		single := []byte(loadinfoByte[i])
 
+		single[1] = ASCIItoBi(single[1])
+		single[0] = ASCIItoBi(single[0]) 
+		outinfo[0] = single[0] * 16 + single[1]
+		fmt.Printf("append byte  is: %v\n", outinfo)
+		reinfo.Write(outinfo)
+	}
+	
+	reinfo.Write([]byte("#"))
+	//fmt.Println(reinfo.String())
+	return true, reinfo
+
+}
+func ASCIItoBi(IN byte)byte {
+	if (IN >=48 && IN <= 57){
+		return (IN - 48)
+	}else if(IN >=97 && IN <= 102){
+		return (IN - 97 + 10)
+	}else if(IN >=65 && IN <= 70){
+		return (IN - 65 + 10)
+	}else{
+		return 0xFF
+	}
+		
+}
 func (mw *CondomMainWindow) tv_ItemActivated() {
 	msg := ``
 	for _, i := range mw.tv.SelectedIndexes() {
