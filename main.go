@@ -9,7 +9,6 @@ import (
 )
 
 import (
-	
 	"encoding/xml"
 	"fmt"
 	"github.com/lxn/walk"
@@ -110,14 +109,13 @@ func NewCondomModel() *CondomModel {
 
 type CondomMainWindow struct {
 	*walk.MainWindow
-	model *CondomModel
-	tv    *walk.TableView
+	model            *CondomModel
+	tv               *walk.TableView
 	messageforsocket *walk.TextEdit
 }
 
 func (m *CondomMainWindow) ResetRows() {
 	items := []*Condom{}
-
 
 	for i := 0; i < osmessagenumber; i++ {
 		x := &Condom{
@@ -144,10 +142,11 @@ func (m *CondomMainWindow) ResetRows() {
 }
 func main() {
 	mw := &CondomMainWindow{model: NewCondomModel()}
-	var IP, Port,connectstatus,messageinfo *walk.TextEdit
+	var IP, Port, connectstatus *walk.LineEdit
+	var messageinfo *walk.TextEdit
 	var lnkclient net.Conn
 	var lnkclientconnectFlag bool = false
-	var Hexflag  bool = true
+	var Hexflag bool = true
 	tcpdisconnect := make(chan bool)
 	var db *walk.DataBinder
 	MainWindow{
@@ -236,17 +235,17 @@ func main() {
 													fmt.Printf("checked: %v\n", x)
 													var err error
 													//判断十六进制
-													if(Hexflag){
+													if (Hexflag) {
 														result, buffer := stringtoASCII(x.MessageInfo)
-														if(result){
+														if (result) {
 															var delim byte = 0x23 //在stringtoASCII处理中增加的结束符
 															//fmt.Printf("before read buffer: %v,len: %v \n", buffer.String(),buffer.Len())
 															line, _ := buffer.ReadString(delim)
-															fmt.Printf("after read buffer: %v,len: %v\n", buffer.String(),buffer.Len())
-															_, err = lnkclient.Write([]byte(strings.Trim(line,"#")))
+															fmt.Printf("after read buffer: %v,len: %v\n", buffer.String(), buffer.Len())
+															_, err = lnkclient.Write([]byte(strings.Trim(line, "#")))
 														}
 
-													}else{
+													} else {
 														_, err = lnkclient.Write([]byte(x.MessageInfo))
 													}
 													if err != nil {
@@ -274,25 +273,21 @@ func main() {
 									},
 								},
 							},
-							Composite{
+							GroupBox{
 								Layout: HBox{MarginsZero: true},
 								Children: []Widget{
-									HSplitter{
-										Children: []Widget{
-											Label{
-												Text: "IP",
-											},
-											TextEdit{AssignTo: &IP},
-											Label{
-												Text: "PORT",
-											},
-											TextEdit{AssignTo: &Port},
-											Label{
-												Text: "status for connection",
-											},
-											TextEdit{AssignTo: &connectstatus},
-										},
+									Label{
+										Text: "IP",
 									},
+									LineEdit{AssignTo: &IP},
+									Label{
+										Text: "PORT",
+									},
+									LineEdit{AssignTo: &Port},
+									Label{
+										Text: "status for connection",
+									},
+									LineEdit{AssignTo: &connectstatus},
 								},
 							},
 							Composite{
@@ -388,45 +383,45 @@ func disconnect(ch chan bool, lnkclient net.Conn) {
 	//lnkclientconnectFlag = false
 	ch <- true
 }
-func stringtoASCII(loadinfo string) (bool, bytes.Buffer)  {
+func stringtoASCII(loadinfo string) (bool, bytes.Buffer) {
 	var reinfo bytes.Buffer
 	var outinfo []byte = make([]byte, 1)
 	loadinfoByte := strings.Split(loadinfo, " ")
-	if(loadinfoByte[0] == ""){
+	if (loadinfoByte[0] == "") {
 		fmt.Printf("文件是空的")
 		reinfo.Write([]byte(""))
 		return false, reinfo
 	}
-		
+
 	lenforload := len(loadinfoByte)
 	fmt.Printf("byte number is: %v\n", lenforload)
-	for  i:=0; i < lenforload; i +=1{
+	for i := 0; i < lenforload; i += 1 {
 		fmt.Printf(loadinfoByte[i])
 		single := []byte(loadinfoByte[i])
 
 		single[1] = ASCIItoBi(single[1])
-		single[0] = ASCIItoBi(single[0]) 
-		outinfo[0] = single[0] * 16 + single[1]
+		single[0] = ASCIItoBi(single[0])
+		outinfo[0] = single[0]*16 + single[1]
 		fmt.Printf("append byte  is: %v\n", outinfo)
 		reinfo.Write(outinfo)
 	}
-	
+
 	reinfo.Write([]byte("#"))
 	//fmt.Println(reinfo.String())
 	return true, reinfo
 
 }
-func ASCIItoBi(IN byte)byte {
-	if (IN >=48 && IN <= 57){
+func ASCIItoBi(IN byte) byte {
+	if (IN >= 48 && IN <= 57) {
 		return (IN - 48)
-	}else if(IN >=97 && IN <= 102){
+	} else if (IN >= 97 && IN <= 102) {
 		return (IN - 97 + 10)
-	}else if(IN >=65 && IN <= 70){
+	} else if (IN >= 65 && IN <= 70) {
 		return (IN - 65 + 10)
-	}else{
+	} else {
 		return 0xFF
 	}
-		
+
 }
 func (mw *CondomMainWindow) tv_ItemActivated() {
 	msg := ``
@@ -454,7 +449,7 @@ func (mw *CondomMainWindow) TcpClientReadandSend(ch chan bool, lnkclient net.Con
 		}
 		str := string(buf[:n])
 		fmt.Printf("receive from client, data: %v\n", str)
-		mw.messageforsocket.SetText("接收消息:"+ "\r\n" + str + "\r\n")
+		mw.messageforsocket.SetText("接收消息:" + "\r\n" + str + "\r\n")
 		sendmessageName := mw.GetXMLanswer(str)
 		if ("" != sendmessageName) {
 			for _, x := range mw.model.items {
@@ -495,7 +490,7 @@ func (mw *CondomMainWindow) GetXMLanswer(receiveXML string) string {
 				attrValue := attr.Value
 				fmt.Printf("An attribute is: %s %s\n", attrName, attrValue)
 			}
-		
+
 		// 处理元素结束（标签）
 		case xml.EndElement:
 			fmt.Printf("Token of '%s' end\n", token.Name.Local)
