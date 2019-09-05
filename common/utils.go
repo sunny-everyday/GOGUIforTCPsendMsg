@@ -21,7 +21,9 @@ func StringtoASCII(loadinfo string) (bool, bytes.Buffer) {
 	for i := 0; i < lenforload; i += 1 {
 		fmt.Printf(loadinfoByte[i])
 		single := []byte(loadinfoByte[i])
-
+		if len(single) <= 0 {
+			continue
+		}
 		single[1] = ASCIItoBi(single[1])
 		single[0] = ASCIItoBi(single[0])
 		outinfo[0] = single[0]*16 + single[1]
@@ -47,4 +49,3 @@ func ASCIItoBi(IN byte) byte {
 	}
 
 }
-
