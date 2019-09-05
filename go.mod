@@ -1,4 +1,4 @@
-module github.com/sunny-everyday/GOGUIforTCPsendMsg
+module GOGUIforTCPsendMsg
 
 require (
 	github.com/lxn/walk v0.0.0-20190829150329-026611184a72
