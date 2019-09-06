@@ -1,11 +1,10 @@
 package gui
 
 import (
-	"encoding/xml"
 	"fmt"
 	"github.com/lxn/walk"
 	"net"
-	"strings"
+	"GOGUIforTCPsendMsg/common"
 )
 
 type Condom struct {
@@ -99,7 +98,7 @@ func (mw *CondomMainWindow) TcpClientReadandSend(ch chan bool, lnkclient net.Con
 		str := string(buf[:n])
 		fmt.Printf("receive from client, data: %v\n", str)
 		mw.Messageforsocket.SetText("接收消息:" + "\r\n" + str + "\r\n")
-		sendmessageName := mw.GetXMLanswer(str)
+		sendmessageName := common.GetXMLanswer(str)
 		if ("" != sendmessageName) {
 			for _, x := range mw.Model.Items {
 				if x.Name == sendmessageName {
@@ -115,49 +114,4 @@ func (mw *CondomMainWindow) TcpClientReadandSend(ch chan bool, lnkclient net.Con
 	}
 }
 
-func (mw *CondomMainWindow) GetXMLanswer(receiveXML string) string {
-	var t xml.Token
-	var err error
-	inputReader := strings.NewReader(receiveXML)
 
-	// 从文件读取，如可以如下：
-	// content, err := ioutil.ReadFile("studygolang.xml")
-	// decoder := xml.NewDecoder(bytes.NewBuffer(content))
-
-	decoder := xml.NewDecoder(inputReader)
-	var TYPEflag bool
-	for t, err = decoder.Token(); err == nil; t, err = decoder.Token() {
-		switch token := t.(type) {
-		// 处理元素开始（标签）
-		case xml.StartElement:
-			name := token.Name.Local
-			fmt.Printf("Token name: %s\n", name)
-			if ("Type" == name) {
-				TYPEflag = true
-			}
-			for _, attr := range token.Attr {
-				attrName := attr.Name.Local
-				attrValue := attr.Value
-				fmt.Printf("An attribute is: %s %s\n", attrName, attrValue)
-			}
-
-		// 处理元素结束（标签）
-		case xml.EndElement:
-			fmt.Printf("Token of '%s' end\n", token.Name.Local)
-		// 处理字符数据（这里就是元素的文本）
-		case xml.CharData:
-			if (TYPEflag) {
-				content := string([]byte(token))
-				fmt.Printf("This is the content: %v\n", content)
-				if ("1" == content) {
-					return "control58Res"
-				}
-			}
-
-			TYPEflag = false
-		default:
-			// ...
-		}
-	}
-	return ""
-}
