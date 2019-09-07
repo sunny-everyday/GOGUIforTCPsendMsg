@@ -1,10 +1,10 @@
 package gui
 
 import (
+	"GOGUIforTCPsendMsg/common"
 	"fmt"
 	"github.com/lxn/walk"
 	"net"
-	"GOGUIforTCPsendMsg/common"
 )
 
 type Condom struct {
@@ -15,7 +15,6 @@ type Condom struct {
 	Checked     bool
 }
 
-
 //message number
 var Osmessagenumber int = 0
 var Rsmessagenumber int = 0
@@ -25,7 +24,6 @@ var Readsendmessagelist [100]string
 
 var Onlysendmessage [100]string
 var Readsendmessage [100]string
-
 
 type CondomMainWindow struct {
 	*walk.MainWindow
@@ -70,7 +68,6 @@ func (m *CondomMainWindow) ResetRows() {
 	m.Tv.SetSelectedIndexes([]int{})
 }
 
-
 func (mw *CondomMainWindow) tv_ItemActivated() {
 	msg := ``
 	for _, i := range mw.Tv.SelectedIndexes() {
@@ -83,7 +80,7 @@ func (mw *CondomMainWindow) TcpClientReadandSend(ch chan bool, lnkclient net.Con
 	var disconnectflag bool
 	for {
 		disconnectflag = <-ch
-		if (disconnectflag) {
+		if disconnectflag {
 			lnkclient.Close()
 			*lnkclientconnectFlag = false
 			return
@@ -99,7 +96,7 @@ func (mw *CondomMainWindow) TcpClientReadandSend(ch chan bool, lnkclient net.Con
 		fmt.Printf("receive from client, data: %v\n", str)
 		mw.Messageforsocket.SetText("接收消息:" + "\r\n" + str + "\r\n")
 		sendmessageName := common.GetXMLanswer(str)
-		if ("" != sendmessageName) {
+		if "" != sendmessageName {
 			for _, x := range mw.Model.Items {
 				if x.Name == sendmessageName {
 					var err error
@@ -113,5 +110,3 @@ func (mw *CondomMainWindow) TcpClientReadandSend(ch chan bool, lnkclient net.Con
 		}
 	}
 }
-
-

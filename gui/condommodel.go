@@ -20,7 +20,6 @@ func NewCondomModel() *CondomModel {
 	return m
 }
 
-
 func (m *CondomModel) RowCount() int {
 	return len(m.Items)
 }
@@ -73,4 +72,3 @@ func (m *CondomModel) FloatToString(input_num float64) string {
 	// to convert a float number to a string
 	return strconv.FormatFloat(float64(input_num), 'f', 6, 64)
 }
-

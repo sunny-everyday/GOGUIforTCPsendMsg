@@ -10,6 +10,7 @@ import (
 )
 
 import (
+	gui "GOGUIforTCPsendMsg/gui"
 	"fmt"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
@@ -17,12 +18,13 @@ import (
 	"net"
 	"path/filepath"
 	"strings"
-	gui "GOGUIforTCPsendMsg/gui"
 )
 
 func main() {
 	mw := gui.NewCondomMainWindow()
 	var IP, Port, connectstatus *walk.LineEdit
+	IP.SetText("127.0.0.1")
+	Port.SetText("60000")
 	var messageinfo *walk.TextEdit
 	var lnkclient net.Conn
 	var lnkclientconnectFlag bool = false
@@ -31,7 +33,7 @@ func main() {
 	var db *walk.DataBinder
 	MainWindow{
 		AssignTo: &mw.MainWindow,
-		Title:    "Robot Simulator",
+		Title:    "Simulator",
 		Size:     Size{800, 500},
 		Layout:   VBox{},
 		DataBinder: DataBinder{
@@ -71,7 +73,7 @@ func main() {
 												data, _ := ioutil.ReadFile(way1 + f.Name())
 												fmt.Println(data)
 												gui.Onlysendmessage[gui.Osmessagenumber] = string(data)
-												gui.Osmessagenumber ++
+												gui.Osmessagenumber++
 											}
 											//readsend
 											files, _ = ioutil.ReadDir(way2)
@@ -83,7 +85,7 @@ func main() {
 												data, _ := ioutil.ReadFile(way2 + f.Name())
 												fmt.Println(data)
 												gui.Readsendmessage[gui.Rsmessagenumber] = string(data)
-												gui.Rsmessagenumber ++
+												gui.Rsmessagenumber++
 											}
 											fmt.Println(gui.Rsmessagenumber + gui.Osmessagenumber)
 											mw.ResetRows()
@@ -115,9 +117,9 @@ func main() {
 													fmt.Printf("checked: %v\n", x)
 													var err error
 													//判断十六进制
-													if (Hexflag) {
+													if Hexflag {
 														result, buffer := common.StringtoASCII(x.MessageInfo)
-														if (result) {
+														if result {
 															var delim byte = 0x23 //在stringtoASCII处理中增加的结束符
 															//fmt.Printf("before read buffer: %v,len: %v \n", buffer.String(),buffer.Len())
 															line, _ := buffer.ReadString(delim)
@@ -144,7 +146,7 @@ func main() {
 									PushButton{
 										Text: "disconnect",
 										OnClicked: func() {
-											if (lnkclientconnectFlag) {
+											if lnkclientconnectFlag {
 												go disconnect(tcpdisconnect, lnkclient)
 											}
 											connectstatus.SetText("disconnect")
@@ -258,7 +260,6 @@ func main() {
 		},
 	}.Run()
 }
-
 
 func disconnect(ch chan bool, lnkclient net.Conn) {
 	//lnkclient.Close()
