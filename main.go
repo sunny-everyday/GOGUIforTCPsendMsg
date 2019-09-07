@@ -10,7 +10,8 @@ import (
 )
 
 import (
-	gui "GOGUIforTCPsendMsg/gui"
+	"GOGUIforTCPsendMsg/gui"
+	"GOGUIforTCPsendMsg/defs"
 	"fmt"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
@@ -23,14 +24,12 @@ import (
 func main() {
 	mw := gui.NewCondomMainWindow()
 	var IP, Port, connectstatus *walk.LineEdit
-	IP.SetText("127.0.0.1")
-	Port.SetText("60000")
 	var messageinfo *walk.TextEdit
 	var lnkclient net.Conn
 	var lnkclientconnectFlag bool = false
-	var Hexflag bool = true
 	tcpdisconnect := make(chan bool)
 	var db *walk.DataBinder
+
 	MainWindow{
 		AssignTo: &mw.MainWindow,
 		Title:    "Simulator",
@@ -39,7 +38,7 @@ func main() {
 		DataBinder: DataBinder{
 			AssignTo:       &db,
 			Name:           "animal",
-			DataSource:     Hexflag,
+			DataSource:     defs.Hexflag,
 			ErrorPresenter: ToolTipErrorPresenter{},
 		},
 		Children: []Widget{
@@ -117,7 +116,7 @@ func main() {
 													fmt.Printf("checked: %v\n", x)
 													var err error
 													//判断十六进制
-													if Hexflag {
+													if defs.Hexflag {
 														result, buffer := common.StringtoASCII(x.MessageInfo)
 														if result {
 															var delim byte = 0x23 //在stringtoASCII处理中增加的结束符
@@ -161,7 +160,8 @@ func main() {
 									Label{
 										Text: "IP",
 									},
-									LineEdit{AssignTo: &IP},
+									LineEdit{
+										AssignTo: &IP},
 									Label{
 										Text: "PORT",
 									},
@@ -245,7 +245,7 @@ func main() {
 										Text: "十六进制",
 									},
 									CheckBox{
-										Checked: Bind("Hexflag"),
+										Checked: Bind("defs.Hexflag"),
 									},
 								},
 							},

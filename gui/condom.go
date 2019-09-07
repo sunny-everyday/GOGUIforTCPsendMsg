@@ -77,14 +77,18 @@ func (mw *CondomMainWindow) tv_ItemActivated() {
 }
 
 func (mw *CondomMainWindow) TcpClientReadandSend(ch chan bool, lnkclient net.Conn, lnkclientconnectFlag *bool) {
-	var disconnectflag bool
 	for {
-		disconnectflag = <-ch
-		if disconnectflag {
-			lnkclient.Close()
-			*lnkclientconnectFlag = false
-			return
+		select {
+		case disconnectflag := <-ch:
+			if disconnectflag {
+				lnkclient.Close()
+				*lnkclientconnectFlag = false
+				fmt.Println("Exit!")
+				return
+			}
+		default:
 		}
+
 		var buf [2000]byte
 		n, err := lnkclient.Read(buf[:])
 
@@ -93,7 +97,7 @@ func (mw *CondomMainWindow) TcpClientReadandSend(ch chan bool, lnkclient net.Con
 			break
 		}
 		str := string(buf[:n])
-		fmt.Printf("receive from client, data: %v\n", str)
+		fmt.Printf("receive from client, data: %s\n", str)
 		mw.Messageforsocket.SetText("接收消息:" + "\r\n" + str + "\r\n")
 		sendmessageName := common.GetXMLanswer(str)
 		if "" != sendmessageName {
