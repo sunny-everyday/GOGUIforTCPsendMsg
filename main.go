@@ -11,7 +11,6 @@ import (
 
 import (
 	"GOGUIforTCPsendMsg/gui"
-	"GOGUIforTCPsendMsg/defs"
 	"fmt"
 	"github.com/lxn/walk"
 	. "github.com/lxn/walk/declarative"
@@ -20,7 +19,7 @@ import (
 	"path/filepath"
 	"strings"
 )
-
+var Hexflag bool = true
 func main() {
 	mw := gui.NewCondomMainWindow()
 	var IP, Port, connectstatus *walk.LineEdit
@@ -38,7 +37,7 @@ func main() {
 		DataBinder: DataBinder{
 			AssignTo:       &db,
 			Name:           "animal",
-			DataSource:     defs.Hexflag,
+			DataSource:     Hexflag,
 			ErrorPresenter: ToolTipErrorPresenter{},
 		},
 		Children: []Widget{
@@ -116,7 +115,7 @@ func main() {
 													fmt.Printf("checked: %v\n", x)
 													var err error
 													//判断十六进制
-													if defs.Hexflag {
+													if Hexflag {
 														result, buffer := common.StringtoASCII(x.MessageInfo)
 														if result {
 															var delim byte = 0x23 //在stringtoASCII处理中增加的结束符
